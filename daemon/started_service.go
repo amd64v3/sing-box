@@ -3,6 +3,7 @@ package daemon
 import (
 	"context"
 	"net/netip"
+	"net/url"
 	"os"
 	"runtime"
 	runtimeDebug "runtime/debug"
@@ -34,7 +35,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-const APIVersion = 3
+const APIVersion = 4
 
 const urlTestPushMinInterval = 250 * time.Millisecond
 
@@ -674,6 +675,20 @@ func (s *StartedService) SetClashMode(ctx context.Context, request *ClashMode) (
 	return &emptypb.Empty{}, nil
 }
 
+func validateURLTestURL(link string) error {
+	if link == "" {
+		return nil
+	}
+	linkURL, err := url.Parse(link)
+	if err != nil || linkURL.Hostname() == "" {
+		return status.Error(codes.InvalidArgument, "invalid URL test URL")
+	}
+	if linkURL.Scheme != "https" {
+		return status.Error(codes.InvalidArgument, "URL test URL must use HTTPS")
+	}
+	return nil
+}
+
 func (s *StartedService) URLTest(ctx context.Context, request *URLTestRequest) (*emptypb.Empty, error) {
 	s.serviceAccess.RLock()
 	if s.serviceStatus.Status != ServiceStatus_STARTED {
@@ -690,6 +705,13 @@ func (s *StartedService) URLTest(ctx context.Context, request *URLTestRequest) (
 	historyStorage := boxService.urlTestHistoryStorage
 	urlTest, isURLTest := outbound.(*group.URLTest)
 	outboundGroup, isOutboundGroup := outbound.(adapter.OutboundGroup)
+	link := ""
+	if !isURLTest {
+		link = request.Url
+		if err := validateURLTestURL(link); err != nil {
+			return nil, err
+		}
+	}
 	if isURLTest {
 		go urlTest.CheckOutbounds()
 	} else if isOutboundGroup {
@@ -708,7 +730,7 @@ func (s *StartedService) URLTest(ctx context.Context, request *URLTestRequest) (
 			outboundToTest := detour
 			itemTag := outboundToTest.Tag()
 			b.Go(itemTag, func() (any, error) {
-				t, err := urltest.URLTest(boxService.ctx, "", outboundToTest)
+				t, err := urltest.URLTest(boxService.ctx, link, outboundToTest)
 				if err != nil {
 					historyStorage.DeleteURLTestHistory(itemTag)
 				} else {
@@ -722,7 +744,7 @@ func (s *StartedService) URLTest(ctx context.Context, request *URLTestRequest) (
 		}
 	} else {
 		go func() {
-			t, err := urltest.URLTest(boxService.ctx, "", outbound)
+			t, err := urltest.URLTest(boxService.ctx, link, outbound)
 			if err != nil {
 				historyStorage.DeleteURLTestHistory(outboundTag)
 			} else {
