@@ -3,6 +3,7 @@ package daemon
 import (
 	"context"
 	"net/netip"
+	"net/url"
 	"os"
 	"runtime"
 	runtimeDebug "runtime/debug"
@@ -33,7 +34,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-const APIVersion = 4
+const APIVersion = 5
 
 const (
 	urlTestPushMinInterval = 250 * time.Millisecond
@@ -594,6 +595,10 @@ func (s *StartedService) readGroups() *Groups {
 		}
 	}
 	var gs Groups
+	if boxService.cacheFile != nil {
+		gs.UrlTestUrl = boxService.cacheFile.LoadURLTestURL()
+		gs.UrlTestUrlPersistent = true
+	}
 	for _, iGroup := range iGroups {
 		var g Group
 		g.Tag = iGroup.Tag()
@@ -709,6 +714,20 @@ func (s *StartedService) SetClashMode(ctx context.Context, request *ClashMode) (
 	return &emptypb.Empty{}, nil
 }
 
+func validateURLTestURL(link string) error {
+	if link == "" {
+		return nil
+	}
+	linkURL, err := url.Parse(link)
+	if err != nil || linkURL.Hostname() == "" {
+		return status.Error(codes.InvalidArgument, "invalid URL test URL")
+	}
+	if linkURL.Scheme != "https" {
+		return status.Error(codes.InvalidArgument, "URL test URL must use HTTPS")
+	}
+	return nil
+}
+
 func (s *StartedService) URLTest(ctx context.Context, request *URLTestRequest) (*emptypb.Empty, error) {
 	s.serviceAccess.RLock()
 	if s.serviceStatus.Status != ServiceStatus_STARTED {
@@ -717,6 +736,19 @@ func (s *StartedService) URLTest(ctx context.Context, request *URLTestRequest) (
 	}
 	boxService := s.instance
 	s.serviceAccess.RUnlock()
+	if request.StoreUrl {
+		if err := validateURLTestURL(request.Url); err != nil {
+			return nil, err
+		}
+		if boxService.cacheFile == nil {
+			return nil, status.Error(codes.FailedPrecondition, "cache file not available")
+		}
+		if err := boxService.cacheFile.StoreURLTestURL(request.Url); err != nil {
+			return nil, err
+		}
+		s.urlTestSubscriber.Emit(struct{}{})
+		return &emptypb.Empty{}, nil
+	}
 	outboundTag := request.OutboundTag
 	outbound, isLoaded := boxService.outboundManager.Outbound(outboundTag)
 	if !isLoaded {
@@ -725,6 +757,13 @@ func (s *StartedService) URLTest(ctx context.Context, request *URLTestRequest) (
 	historyStorage := boxService.urlTestHistoryStorage
 	urlTest, isURLTest := outbound.(*group.URLTest)
 	outboundGroup, isOutboundGroup := outbound.(adapter.OutboundGroup)
+	link := ""
+	if !isURLTest {
+		link = request.Url
+		if err := validateURLTestURL(link); err != nil {
+			return nil, err
+		}
+	}
 	if isURLTest {
 		go urlTest.CheckOutbounds()
 	} else if isOutboundGroup {
@@ -732,10 +771,10 @@ func (s *StartedService) URLTest(ctx context.Context, request *URLTestRequest) (
 			itOutbound, _ := boxService.outboundManager.Outbound(it)
 			return itOutbound
 		}))
-		go group.URLTestOutbounds(boxService.ctx, boxService.outboundManager, historyStorage, boxService.logFactory.Logger(), outbounds, "", 0, true)
+		go group.URLTestOutbounds(boxService.ctx, boxService.outboundManager, historyStorage, boxService.logFactory.Logger(), outbounds, link, 0, true)
 	} else {
 		go func() {
-			t, err := urltest.URLTest(boxService.ctx, "", outbound)
+			t, err := urltest.URLTest(boxService.ctx, link, outbound)
 			if err != nil {
 				historyStorage.DeleteURLTestHistory(outboundTag)
 			} else {

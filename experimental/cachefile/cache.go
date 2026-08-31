@@ -25,12 +25,15 @@ var (
 	bucketExpand   = []byte("group_expand")
 	bucketMode     = []byte("clash_mode")
 	bucketRuleSet  = []byte("rule_set")
+	bucketURLTest  = []byte("url_test")
+	urlTestURLKey  = []byte("url")
 
 	bucketNameList = []string{
 		string(bucketSelected),
 		string(bucketExpand),
 		string(bucketMode),
 		string(bucketRuleSet),
+		string(bucketURLTest),
 		string(bucketRDRC),
 		string(bucketDNSCache),
 	}
@@ -437,6 +440,32 @@ func (c *CacheFile) StoreGroupExpand(group string, isExpand bool) error {
 		} else {
 			return bucket.Put([]byte(group), []byte{0})
 		}
+	})
+}
+
+func (c *CacheFile) LoadURLTestURL() string {
+	var url string
+	c.view(func(t *bbolt.Tx) error {
+		bucket := c.bucket(t, bucketURLTest)
+		if bucket == nil {
+			return nil
+		}
+		url = string(bucket.Get(urlTestURLKey))
+		return nil
+	})
+	return url
+}
+
+func (c *CacheFile) StoreURLTestURL(url string) error {
+	return c.batch(func(t *bbolt.Tx) error {
+		bucket, err := c.createBucket(t, bucketURLTest)
+		if err != nil {
+			return err
+		}
+		if url == "" {
+			return bucket.Delete(urlTestURLKey)
+		}
+		return bucket.Put(urlTestURLKey, []byte(url))
 	})
 }
 

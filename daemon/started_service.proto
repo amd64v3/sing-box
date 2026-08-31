@@ -112,6 +112,8 @@ message Status {
 
 message Groups {
   repeated Group group = 1;
+  string urlTestUrl = 2;
+  bool urlTestUrlPersistent = 3;
 }
 
 message Group {
@@ -132,6 +134,8 @@ message GroupItem {
 
 message URLTestRequest {
   string outboundTag = 1;
+  string url = 2;
+  bool storeUrl = 3;
 }
 
 message SelectOutboundRequest {

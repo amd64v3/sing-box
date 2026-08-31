@@ -639,10 +639,12 @@ func (x *Status) GetDownlinkTotal() int64 {
 }
 
 type Groups struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Group         []*Group               `protobuf:"bytes,1,rep,name=group,proto3" json:"group,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	Group                []*Group               `protobuf:"bytes,1,rep,name=group,proto3" json:"group,omitempty"`
+	UrlTestUrl           string                 `protobuf:"bytes,2,opt,name=urlTestUrl,proto3" json:"urlTestUrl,omitempty"`
+	UrlTestUrlPersistent bool                   `protobuf:"varint,3,opt,name=urlTestUrlPersistent,proto3" json:"urlTestUrlPersistent,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *Groups) Reset() {
@@ -680,6 +682,20 @@ func (x *Groups) GetGroup() []*Group {
 		return x.Group
 	}
 	return nil
+}
+
+func (x *Groups) GetUrlTestUrl() string {
+	if x != nil {
+		return x.UrlTestUrl
+	}
+	return ""
+}
+
+func (x *Groups) GetUrlTestUrlPersistent() bool {
+	if x != nil {
+		return x.UrlTestUrlPersistent
+	}
+	return false
 }
 
 type Group struct {
@@ -837,6 +853,8 @@ func (x *GroupItem) GetUrlTestDelay() int32 {
 type URLTestRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OutboundTag   string                 `protobuf:"bytes,1,opt,name=outboundTag,proto3" json:"outboundTag,omitempty"`
+	Url           string                 `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
+	StoreUrl      bool                   `protobuf:"varint,3,opt,name=storeUrl,proto3" json:"storeUrl,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -876,6 +894,20 @@ func (x *URLTestRequest) GetOutboundTag() string {
 		return x.OutboundTag
 	}
 	return ""
+}
+
+func (x *URLTestRequest) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *URLTestRequest) GetStoreUrl() bool {
+	if x != nil {
+		return x.StoreUrl
+	}
+	return false
 }
 
 type SelectOutboundRequest struct {
@@ -7488,9 +7520,11 @@ const file_daemon_started_service_proto_rawDesc = "" +
 	"\x06uplink\x18\x06 \x01(\x03R\x06uplink\x12\x1a\n" +
 	"\bdownlink\x18\a \x01(\x03R\bdownlink\x12 \n" +
 	"\vuplinkTotal\x18\b \x01(\x03R\vuplinkTotal\x12$\n" +
-	"\rdownlinkTotal\x18\t \x01(\x03R\rdownlinkTotal\"-\n" +
+	"\rdownlinkTotal\x18\t \x01(\x03R\rdownlinkTotal\"\x81\x01\n" +
 	"\x06Groups\x12#\n" +
-	"\x05group\x18\x01 \x03(\v2\r.daemon.GroupR\x05group\"\xae\x01\n" +
+	"\x05group\x18\x01 \x03(\v2\r.daemon.GroupR\x05group\x12\x1e\n" +
+	"\nurlTestUrl\x18\x02 \x01(\tR\nurlTestUrl\x122\n" +
+	"\x14urlTestUrlPersistent\x18\x03 \x01(\bR\x14urlTestUrlPersistent\"\xae\x01\n" +
 	"\x05Group\x12\x10\n" +
 	"\x03tag\x18\x01 \x01(\tR\x03tag\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x1e\n" +
@@ -7504,9 +7538,11 @@ const file_daemon_started_service_proto_rawDesc = "" +
 	"\x03tag\x18\x01 \x01(\tR\x03tag\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12 \n" +
 	"\vurlTestTime\x18\x03 \x01(\x03R\vurlTestTime\x12\"\n" +
-	"\furlTestDelay\x18\x04 \x01(\x05R\furlTestDelay\"2\n" +
+	"\furlTestDelay\x18\x04 \x01(\x05R\furlTestDelay\"`\n" +
 	"\x0eURLTestRequest\x12 \n" +
-	"\voutboundTag\x18\x01 \x01(\tR\voutboundTag\"U\n" +
+	"\voutboundTag\x18\x01 \x01(\tR\voutboundTag\x12\x10\n" +
+	"\x03url\x18\x02 \x01(\tR\x03url\x12\x1a\n" +
+	"\bstoreUrl\x18\x03 \x01(\bR\bstoreUrl\"U\n" +
 	"\x15SelectOutboundRequest\x12\x1a\n" +
 	"\bgroupTag\x18\x01 \x01(\tR\bgroupTag\x12 \n" +
 	"\voutboundTag\x18\x02 \x01(\tR\voutboundTag\"O\n" +
