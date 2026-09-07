@@ -8,12 +8,13 @@ import (
 const defaultAttachedLogMaxLines = 3000
 
 // StartOrReloadService and CloseService must not be called on an attached service.
-func NewAttachedService(ctx context.Context) *StartedService {
+func NewAttachedService(ctx context.Context, urlTestURL string) *StartedService {
 	instance := attachInstance(ctx)
 	s := NewStartedService(ServiceOptions{
 		Context:     ctx,
 		LogMaxLines: defaultAttachedLogMaxLines,
 	})
+	s.urlTestURL = urlTestURL
 	s.instance = instance
 	s.serviceStatus = &ServiceStatus{Status: ServiceStatus_STARTED}
 	s.startedAt = time.Now()

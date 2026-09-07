@@ -68,6 +68,7 @@ type StartedService struct {
 	logObserver             *observable.Observer[*log.Entry]
 	instance                *Instance
 	startedAt               time.Time
+	urlTestURL              string
 	urlTestSubscriber       *observable.Subscriber[struct{}]
 	urlTestObserver         *observable.Observer[struct{}]
 	clashModeSubscriber     *observable.Subscriber[struct{}]
@@ -727,6 +728,7 @@ func (s *StartedService) URLTest(ctx context.Context, request *URLTestRequest) (
 	historyStorage := boxService.urlTestHistoryStorage
 	urlTest, isURLTest := outbound.(*group.URLTest)
 	outboundGroup, isOutboundGroup := outbound.(adapter.OutboundGroup)
+	urlTestURL := s.urlTestURL
 	if isURLTest {
 		go urlTest.CheckOutbounds()
 	} else if isOutboundGroup {
@@ -734,10 +736,10 @@ func (s *StartedService) URLTest(ctx context.Context, request *URLTestRequest) (
 			itOutbound, _ := boxService.outboundManager.Outbound(it)
 			return itOutbound
 		}))
-		go group.URLTestOutbounds(boxService.ctx, boxService.outboundManager, historyStorage, boxService.logFactory.Logger(), outbounds, "", 0, true)
+		go group.URLTestOutbounds(boxService.ctx, boxService.outboundManager, historyStorage, boxService.logFactory.Logger(), outbounds, urlTestURL, 0, true)
 	} else {
 		go func() {
-			t, err := urltest.URLTest(boxService.ctx, "", outbound)
+			t, err := urltest.URLTest(boxService.ctx, urlTestURL, outbound)
 			if err != nil {
 				historyStorage.DeleteURLTestHistory(outboundTag)
 			} else {
