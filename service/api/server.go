@@ -74,7 +74,7 @@ func (s *Service) Start(stage adapter.StartStage) error {
 	if stage != adapter.StartStateStarted {
 		return nil
 	}
-	s.startedService = daemon.NewAttachedService(s.ctx)
+	s.startedService = daemon.NewAttachedService(s.ctx, s.options.URLTestURL)
 	s.grpcServer = daemon.NewServer(s.startedService, s.options.Secret)
 	if s.dashboard != nil {
 		err := s.dashboard.start()
