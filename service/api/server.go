@@ -65,7 +65,7 @@ func (s *Service) Start(stage adapter.StartStage, scope *adapter.Scope) error {
 		return nil
 	}
 	ctx := scope.Context()
-	startedService := daemon.NewAttachedService(ctx)
+	startedService := daemon.NewAttachedService(ctx, s.options.URLTestURL)
 	scope.Add(func() error {
 		startedService.Close()
 		return nil
