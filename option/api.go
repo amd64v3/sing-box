@@ -11,6 +11,7 @@ import (
 type APIServiceOptions struct {
 	ListenOptions
 	Secret                           string                     `json:"secret,omitempty"`
+	URLTestURL                       string                     `json:"connection_test_url,omitempty"`
 	AccessControlAllowOrigin         badoption.Listable[string] `json:"access_control_allow_origin,omitempty" examples:"http://sing-box-dashboard.sagernet.org/,https://sing-box-dashboard.sagernet.org/"`
 	AccessControlAllowPrivateNetwork bool                       `json:"access_control_allow_private_network,omitempty"`
 	Dashboard                        *APIDashboardOptions       `json:"dashboard,omitempty"`
